@@ -31,6 +31,100 @@
 	<link rel="stylesheet" href=" {% static 'css/ion.rangeSlider.skinFlat.css'%}" />
 	<link rel="stylesheet" href=" {% static 'css/magnific-popup.css'%}">
 	<link rel="stylesheet" href=" {% static 'css/main.css'%}">
+
+	<!-- Custom Cart Badge Styling -->
+	<style>
+		/* Cart Link */
+		.cart-link {
+			display: inline-block;
+			padding: 12px;
+			text-decoration: none;
+			transition: all 0.3s ease;
+		}
+
+		.cart-link:hover {
+			text-decoration: none;
+			transform: scale(1.05);
+		}
+
+		/* Cart Icon - Now the relative container */
+		.cart-icon {
+			position: relative;
+			display: inline-block;
+			font-size: 24px;
+			color: #333;
+			transition: color 0.3s ease;
+		}
+
+		.cart-link:hover .cart-icon {
+			color: #007bff;
+		}
+
+		/* Professional Cart Badge */
+		.cart-badge {
+			position: absolute;
+			top: -2px;
+			right: -2px;
+			background: linear-gradient(135deg, #ffba00, #ff6c00);
+			color: white;
+			font-size: 10px;
+			font-weight: 700;
+			min-width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 6px rgba(255, 186, 0, 0.4);
+			border: 1px solid white;
+			animation: pulse 2s infinite;
+			z-index: 999;
+		}
+
+		/* Pulse Animation */
+		@keyframes pulse {
+			0% {
+				box-shadow: 0 3px 8px rgba(255, 186, 0, 0.4);
+			}
+			50% {
+				box-shadow: 0 4px 16px rgba(255, 186, 0, 0.6);
+				transform: scale(1.05);
+			}
+			100% {
+				box-shadow: 0 3px 8px rgba(255, 186, 0, 0.4);
+			}
+		}
+
+		/* Badge for larger numbers */
+		.cart-badge.large-count {
+			min-width: 24px;
+			height: 24px;
+			border-radius: 12px;
+			font-size: 10px;
+		}
+
+		/* Mobile Responsive */
+		@media (max-width: 768px) {
+			.cart-icon {
+				font-size: 18px;
+			}
+
+			.cart-badge {
+				min-width: 14px;
+				height: 14px;
+				font-size: 9px;
+				top: -1px;
+				right: -1px;
+			}
+		}
+
+		/* Dark theme support */
+		@media (prefers-color-scheme: dark) {
+			.cart-icon {
+				color: #fff;
+			}
+		}
+	</style>
 </head>
 
 <body>
@@ -51,17 +145,10 @@
 					<!-- Collect the nav links, forms, and other content for toggling -->
 					<div class="collapse navbar-collapse offset" id="navbarSupportedContent">
 						<ul class="nav navbar-nav menu_nav ml-auto">
-							<li class="nav-item active"><a class="nav-link" href="index.html">Home</a></li>
+							<li class="nav-item active"><a class="nav-link" href="{% url "home" %}">Home</a></li>
 							<li class="nav-item submenu dropdown">
 								<a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
 								 aria-expanded="false">Shop</a>
-								<ul class="dropdown-menu">
-									<li class="nav-item"><a class="nav-link" href="category.html">Shop Category</a></li>
-									<li class="nav-item"><a class="nav-link" href="single-product.html">Product Details</a></li>
-									<li class="nav-item"><a class="nav-link" href="checkout.html">Product Checkout</a></li>
-									<li class="nav-item"><a class="nav-link" href="cart.html">Shopping Cart</a></li>
-									<li class="nav-item"><a class="nav-link" href="confirmation.html">Confirmation</a></li>
-								</ul>
 							</li>
 							<li class="nav-item submenu dropdown">
 								<a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
@@ -84,7 +171,15 @@
 							<li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
 						</ul>
 						<ul class="nav navbar-nav navbar-right">
-							<li class="nav-item"><a href="#" class="cart"><span class="ti-bag"></span></a></li>
+							<li class="nav-item">
+								<a href="{% url "cart" %}" class="cart-link">
+									<span class="ti-bag cart-icon">
+						             {% if cart_count > 0 %}
+                                       <span class="cart-badge">{{ cart_count }}</span>
+                                     {% endif %}
+									</span>
+								</a>
+							</li>
 							<li class="nav-item">
 								<button class="search"><span class="lnr lnr-magnifier" id="search"></span></button>
 							</li>
@@ -204,6 +299,23 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjCGmQ0Uq4exrzdcL6rvxywDDOvfAu6eE"></script>
 	<script src=" {% static 'js/gmaps.min.js'%}"></script>
 	<script src=" {% static 'js/main.js'%}"></script>
+
+	<!-- Cart Badge Enhancement Script -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const cartBadge = document.querySelector('.cart-badge');
+			if (cartBadge) {
+				const count = parseInt(cartBadge.textContent);
+				// Add large-count class for numbers > 99
+				if (count > 99) {
+					cartBadge.classList.add('large-count');
+					cartBadge.textContent = '99+';
+				} else if (count > 9) {
+					cartBadge.classList.add('large-count');
+				}
+			}
+		});
+	</script>
 </body>
 
 </html>

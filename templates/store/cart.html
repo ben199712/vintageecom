@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<!-- Custom CSS for Cart Page -->
+<style>
+/* Quantity controls */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 140px;
+}
+
+.quantity-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    color: #495057;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+
+.quantity-btn:hover {
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+}
+
+.quantity-btn:active {
+    transform: scale(0.95);
+}
+
+.quantity-input {
+    width: 60px;
+    height: 40px;
+    border: none;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    background: #fff;
+    outline: none;
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.decrease-btn {
+    border-right: 1px solid #e9ecef;
+}
+
+.increase-btn {
+    border-left: 1px solid #e9ecef;
+}
+
+.decrease-btn:hover {
+    background: #dc3545;
+}
+
+.increase-btn:hover {
+    background: #28a745;
+}
+
+/* Remove item button */
+.remove-item-btn {
+    background: #dc3545;
+    color: white !important;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    margin-left: 15px;
+}
+
+.remove-item-btn:hover {
+    background: #c82333;
+    color: white !important;
+    text-decoration: none;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.remove-item-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+.remove-item-btn i {
+    font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .quantity-controls {
+        max-width: 120px;
+    }
+
+    .quantity-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .quantity-input {
+        width: 50px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .remove-item-btn i {
+        font-size: 14px;
+    }
+}
+</style>
+        <!-- Start Banner Area -->
+    <section class="banner-area organic-breadcrumb">
+        <div class="container">
+            <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+                <div class="col-first">
+                    <h1>Shopping Cart</h1>
+                    <nav class="d-flex align-items-center">
+                        <a href="{% url "home" %}">Home<span class="lnr lnr-arrow-right"></span></a>
+                        <a href="{% url "cart" %}">Cart</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- End Banner Area -->
+
+    <!--================Cart Area =================-->
+    <section class="cart_area">
+        <div class="container">
+            <div class="cart_inner">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Product</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cart_item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="media">
+                                            <div class="d-flex">
+                                                <img src="{{ cart_item.product.images.url }}" style="width: 70px; height: 70px;" alt="">
+                                            </div>
+                                            <div class="media-body">
+                                                <a href="{{ cart_item.product.get_url }}" class="text-dark text-decoration-none">{{ cart_item.product.product_name }}</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h5>${{ cart_item.product.price }}</h5>
+                                    </td>
+                                    <td>
+                                        <div class="product_count">
+                                            <div class="quantity-controls">
+                                                <a href="{% url 'remove_cart' cart_item.product.id %}" class="quantity-btn decrease-btn" data-product-id="{{ cart_item.product.id }}">
+                                                    <i class="lnr lnr-chevron-down"></i>
+                                                </a>
+                                                <input type="number" name="qty" id="qty-{{ cart_item.product.id }}"
+                                                       min="1" max="99" value="{{ cart_item.quantity }}"
+                                                       class="quantity-input" readonly>
+                                                <a href="{% url 'add_cart' cart_item.product.id %}" class="quantity-btn increase-btn"
+                                                   data-product-id="{{ cart_item.product.id }}">
+                                                    <i class="lnr lnr-chevron-up"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <h5>${{ cart_item.sub_total }}</h5>
+                                            <a href="{% url 'remove_cart_item' cart_item.product.id %}" class="remove-item-btn btn btn-sm"
+                                               title="Remove item from cart">
+                                                <i class="fa fa-trash ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            <tr class="bottom_button">
+                                <td>
+                                    <a class="gray_btn" href="#">Update Cart</a>
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+                                    <div class="cupon_text d-flex align-items-center">
+                                        <input type="text" placeholder="Coupon Code">
+                                        <a class="primary-btn" href="#">Apply</a>
+                                        <a class="gray_btn" href="#">Close Coupon</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+                                    <h5>Subtotal</h5>
+                                </td>
+                                <td>
+                                    <h5>${{ total }}</h5>
+                                </td>
+                            </tr>
+                            <tr class="shipping_area">
+                                <td>
+
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+                                    <h5>Shipping</h5>
+                                </td>
+                                <td>
+                                    <div class="shipping_box">
+                                        <ul class="list">
+                                            <li><a href="#">Flat Rate: $5.00</a></li>
+                                            <li><a href="#">Free Shipping</a></li>
+                                            <li><a href="#">Flat Rate: $10.00</a></li>
+                                            <li class="active"><a href="#">Local Delivery: $2.00</a></li>
+                                        </ul>
+                                        <h6>Calculate Shipping <i class="fa fa-caret-down" aria-hidden="true"></i></h6>
+                                        <select class="shipping_select">
+                                            <option value="1">Bangladesh</option>
+                                            <option value="2">India</option>
+                                            <option value="4">Pakistan</option>
+                                        </select>
+                                        <select class="shipping_select">
+                                            <option value="1">Select a State</option>
+                                            <option value="2">Select a State</option>
+                                            <option value="4">Select a State</option>
+                                        </select>
+                                        <input type="text" placeholder="Postcode/Zipcode">
+                                        <a class="gray_btn" href="#">Update Details</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="out_button_area">
+                                <td>
+
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+
+                                </td>
+                                <td>
+                                    <div class="checkout_btn_inner d-flex align-items-center">
+                                        <a class="gray_btn" href="{% url "store" %}">Continue Shopping</a>
+                                        <a class="primary-btn" href="#">Proceed to checkout</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--================End Cart Area =================-->
+
+<!-- JavaScript for Quantity Controls -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle decrease button clicks
+    document.querySelectorAll('.decrease-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productId = this.getAttribute('data-product-id');
+            const quantityInput = document.getElementById('qty-' + productId);
+            let currentQty = parseInt(quantityInput.value);
+
+            if (currentQty > 1) {
+                quantityInput.value = currentQty - 1;
+                updateCartItem(productId, currentQty - 1);
+            }
+        });
+    });
+
+    // Handle increase button clicks (you can also add AJAX here)
+    document.querySelectorAll('.increase-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            // Let the default behavior happen (redirect to add_cart URL)
+            // Or you can prevent default and use AJAX
+        });
+    });
+
+    // Handle direct input changes
+    document.querySelectorAll('.quantity-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const productId = this.getAttribute('id').replace('qty-', '');
+            const newQty = parseInt(this.value);
+
+            if (newQty >= 1 && newQty <= 99) {
+                updateCartItem(productId, newQty);
+            } else {
+                this.value = 1; // Reset to minimum
+            }
+        });
+    });
+});
+
+// Function to update cart item (you can implement AJAX here)
+function updateCartItem(productId, quantity) {
+    // For now, we'll just update the display
+    // You can implement AJAX calls to update the backend
+    console.log('Updating product ' + productId + ' to quantity ' + quantity);
+
+    // Example: Update subtotal display
+    updateSubtotal(productId, quantity);
+}
+
+// Function to update subtotal for a specific item
+function updateSubtotal(productId, quantity) {
+    // This is a basic example - you'll need to get the price from somewhere
+    // In a real implementation, you'd get this from the server or store it in data attributes
+    const row = document.querySelector(`#qty-${productId}`).closest('tr');
+    const priceElement = row.querySelector('td:nth-child(2) h5');
+    const totalElement = row.querySelector('td:nth-child(4) h5');
+
+    if (priceElement && totalElement) {
+        const price = parseFloat(priceElement.textContent.replace('$', ''));
+        const newTotal = (price * quantity).toFixed(2);
+        totalElement.textContent = '$' + newTotal;
+
+        // Update grand total
+        updateGrandTotal();
+    }
+}
+
+// Function to update the grand total
+function updateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('tbody tr:not(.bottom_button):not(.shipping_area):not(.out_button_area)').forEach(function(row) {
+        const totalElement = row.querySelector('td:nth-child(4) h5');
+        if (totalElement && totalElement.textContent.includes('$')) {
+            const itemTotal = parseFloat(totalElement.textContent.replace('$', ''));
+            grandTotal += itemTotal;
+        }
+    });
+
+    // Update the subtotal display
+    const subtotalElement = document.querySelector('tr:not(.shipping_area):not(.out_button_area) td:nth-child(4) h5');
+    if (subtotalElement) {
+        subtotalElement.textContent = '$' + grandTotal.toFixed(2);
+    }
+}
+</script>
+
+{% endblock content %}

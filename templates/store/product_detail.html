@@ -50,7 +50,14 @@
 							 class="reduced items-count" type="button"><i class="lnr lnr-chevron-down"></i></button>
 						</div>
 						<div class="card_area d-flex align-items-center">
-							<a class="primary-btn" href="#">Add to Cart</a>
+							{% if single_product.stock == 0 %}
+								<a class="primary-btn" href="#">Out of Stock</a>
+							{% elif in_cart %}
+								<a class="primary-btn" href="#"><i class="lnr lnr-cart mr-2"></i>In your Cart</a>
+								<a class="btn btn-primary mr-2" href="{% url 'cart' %}">View Cart <i class="lnr lnr-eye mr-2"></i></a>
+							{% else %}
+								<a class="primary-btn" href="{% url 'add_cart' single_product.id %}">Add to Cart</a>
+							{% endif %}
 							<a class="icon_btn" href="#"><i class="lnr lnr lnr-heart"></i></a>
 						</div>
 					</div>
