@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Product, Category
 from carts.models import CartItem
 from django.core.paginator import  Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
 
 # Create your views here.
 def store(request, category_slug=None):
@@ -41,3 +42,17 @@ def product_detail(request, category_slug, product_slug):
         'in_cart': in_cart,  
     }
     return render(request, 'store/product_detail.html', context)
+
+def search(request):
+    if 'q' in request.GET:
+        q = request.GET['q']
+        if q:
+            products = Product.objects.order_by('-created_date').filter(Q(product_name__icontains=q))
+            product_count = products.count()
+            
+    context = {
+        'products': products,
+        'product_count': product_count,
+    }
+            
+    return render(request, 'store/store.html', context)

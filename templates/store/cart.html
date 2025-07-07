@@ -183,14 +183,17 @@
                                     <td>
                                         <div class="product_count">
                                             <div class="quantity-controls">
-                                                <a href="{% url 'remove_cart' cart_item.product.id %}" class="quantity-btn decrease-btn" data-product-id="{{ cart_item.product.id }}">
+                                                <a href="#" class="quantity-btn decrease-btn ajax-decrease"
+                                                   data-product-id="{{ cart_item.product.id }}"
+                                                   data-product-name="{{ cart_item.product.product_name }}">
                                                     <i class="lnr lnr-chevron-down"></i>
                                                 </a>
                                                 <input type="number" name="qty" id="qty-{{ cart_item.product.id }}"
                                                        min="1" max="99" value="{{ cart_item.quantity }}"
                                                        class="quantity-input" readonly>
-                                                <a href="{% url 'add_cart' cart_item.product.id %}" class="quantity-btn increase-btn"
-                                                   data-product-id="{{ cart_item.product.id }}">
+                                                <a href="#" class="quantity-btn increase-btn ajax-increase"
+                                                   data-product-id="{{ cart_item.product.id }}"
+                                                   data-product-name="{{ cart_item.product.product_name }}">
                                                     <i class="lnr lnr-chevron-up"></i>
                                                 </a>
                                             </div>
@@ -198,8 +201,10 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center justify-content-between">
-                                            <h5>${{ cart_item.sub_total }}</h5>
-                                            <a href="{% url 'remove_cart_item' cart_item.product.id %}" class="remove-item-btn btn btn-sm"
+                                            <h5 class="item-subtotal" data-product-id="{{ cart_item.product.id }}">${{ cart_item.sub_total }}</h5>
+                                            <a href="#" class="remove-item-btn btn btn-sm ajax-remove"
+                                               data-product-id="{{ cart_item.product.id }}"
+                                               data-product-name="{{ cart_item.product.product_name }}"
                                                title="Remove item from cart">
                                                 <i class="fa fa-trash ms-2"></i>
                                             </a>
@@ -384,6 +389,312 @@ function updateGrandTotal() {
         subtotalElement.textContent = '$' + grandTotal.toFixed(2);
     }
 }
+
+// AJAX Cart Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Add toast notification function
+    function showToast(message, type = 'success') {
+        // Create toast if it doesn't exist
+        let toast = document.getElementById('cart-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'cart-toast';
+            toast.className = 'cart-toast';
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-icon">✓</span>
+                    <span class="toast-message"></span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+        }
+
+        const toastMessage = toast.querySelector('.toast-message');
+        const toastIcon = toast.querySelector('.toast-icon');
+
+        toastMessage.textContent = message;
+
+        // Change color and icon based on type
+        if (type === 'error') {
+            toast.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+            toastIcon.textContent = '✗';
+        } else {
+            toast.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+            toastIcon.textContent = '✓';
+        }
+
+        // Show toast
+        toast.classList.add('show');
+
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Update cart display
+    function updateCartDisplay(data, productId) {
+        // Update cart badge
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            if (data.cart_count > 0) {
+                cartBadge.textContent = data.cart_count;
+                cartBadge.style.display = 'flex';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+        }
+
+        // Update total
+        const totalElement = document.querySelector('tr:last-child td:last-child h5');
+        if (totalElement) {
+            totalElement.textContent = '$' + data.total.toFixed(2);
+        }
+
+        // Update item quantity and subtotal
+        const quantityInput = document.getElementById(`qty-${productId}`);
+        const subtotalElement = document.querySelector(`.item-subtotal[data-product-id="${productId}"]`);
+
+        if (data.item_removed) {
+            // Remove the entire row
+            const row = quantityInput.closest('tr');
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => {
+                    row.remove();
+                    // Check if cart is empty
+                    const remainingRows = document.querySelectorAll('tbody tr:not(.bottom_button):not(.shipping_area):not(.out_button_area)');
+                    if (remainingRows.length === 0) {
+                        location.reload(); // Reload to show empty cart message
+                    }
+                }, 300);
+            }
+        } else {
+            // Update quantity and subtotal
+            if (quantityInput) {
+                quantityInput.value = data.item_quantity;
+            }
+            if (subtotalElement) {
+                subtotalElement.textContent = '$' + data.item_subtotal.toFixed(2);
+            }
+        }
+    }
+
+    // Increase quantity AJAX
+    document.querySelectorAll('.ajax-increase').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const productName = this.getAttribute('data-product-name');
+
+            // Add loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+
+            fetch(`/cart/add_cart_ajax/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Increase response:', data); // Debug log
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+
+                if (data.success) {
+                    // Update quantity input
+                    const quantityInput = document.getElementById(`qty-${productId}`);
+                    if (quantityInput) {
+                        const newQuantity = parseInt(quantityInput.value) + 1;
+                        quantityInput.value = newQuantity;
+
+                        // Update subtotal using the price from the price column
+                        const row = quantityInput.closest('tr');
+                        const priceElement = row.querySelector('td:nth-child(2) h5');
+                        const subtotalElement = row.querySelector('.item-subtotal');
+
+                        if (priceElement && subtotalElement) {
+                            const price = parseFloat(priceElement.textContent.replace('$', ''));
+                            const newSubtotal = price * newQuantity;
+                            subtotalElement.textContent = '$' + newSubtotal.toFixed(2);
+                        }
+                    }
+
+                    // Update cart badge
+                    const cartBadge = document.querySelector('.cart-badge');
+                    if (cartBadge && data.cart_count) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = 'flex';
+                    }
+
+                    // Update total
+                    if (data.total !== undefined) {
+                        const totalElement = document.querySelector('tr:last-child td:last-child h5');
+                        if (totalElement) {
+                            totalElement.textContent = '$' + data.total.toFixed(2);
+                        }
+                    }
+
+                    showToast(`Increased ${productName} quantity`, 'success');
+                } else {
+                    showToast(data.message || 'Error updating cart', 'error');
+                }
+            })
+            .catch(error => {
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+                showToast('Error updating cart', 'error');
+            });
+        });
+    });
+
+    // Decrease quantity AJAX
+    document.querySelectorAll('.ajax-decrease').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const productName = this.getAttribute('data-product-name');
+
+            // Add loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+
+            fetch(`/cart/remove_cart_ajax/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+
+                if (data.success) {
+                    updateCartDisplay(data, productId);
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message || 'Error updating cart', 'error');
+                }
+            })
+            .catch(error => {
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+                showToast('Error updating cart', 'error');
+            });
+        });
+    });
+
+    // Remove item AJAX
+    document.querySelectorAll('.ajax-remove').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const productName = this.getAttribute('data-product-name');
+
+            // Add loading state
+            this.style.opacity = '0.7';
+            this.style.pointerEvents = 'none';
+
+            fetch(`/cart/remove_cart_item_ajax/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateCartDisplay(data, productId);
+                    showToast(data.message, 'success');
+                } else {
+                    this.style.opacity = '1';
+                    this.style.pointerEvents = 'auto';
+                    showToast(data.message || 'Error removing item', 'error');
+                }
+            })
+            .catch(error => {
+                this.style.opacity = '1';
+                this.style.pointerEvents = 'auto';
+                showToast('Error removing item', 'error');
+            });
+        });
+    });
+});
 </script>
+
+<!-- Toast Notification Styles -->
+<style>
+.cart-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    transform: translateX(400px);
+    transition: transform 0.3s ease-in-out;
+    min-width: 300px;
+}
+
+.cart-toast.show {
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-icon {
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.toast-message {
+    flex: 1;
+    font-weight: 500;
+}
+</style>
 
 {% endblock content %}

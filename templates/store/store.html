@@ -8,7 +8,11 @@
 		<div class="container">
 			<div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
 				<div class="col-first">
-					<h1>Shop Category page</h1>
+					{% if 'search' in request.path %}
+					<h1>Search results for "{{ request.GET.q }}"</h1>
+					{% else %}
+					<h1>Our Store</h1>
+					{% endif %}
 				</div>
 			</div>
 		</div>
@@ -85,6 +89,7 @@
 				<!-- Start Best Seller -->
 				<section class="lattest-product-area pb-40 category-list">
 					<div class="row">
+						{% if products %}
 						<!-- single product -->
 						{% for product in products %}
 							<div class="col-lg-4 col-md-6">
@@ -98,7 +103,7 @@
 										</div>
 										<div class="prd-bottom">
 
-											<a href="{% url 'add_cart' product.id %}" class="social-info">
+											<a href="#" class="social-info add-to-cart-btn" data-product-id="{{ product.id }}" data-product-name="{{ product.product_name }}">
 												<span class="ti-bag"></span>
 												<p class="hover-text">add to bag</p>
 											</a>
@@ -111,6 +116,9 @@
 								</div>
 							</div>
 						{% endfor %}
+						{% else %}
+							<h3 class="text-center mt-5 mx-5">No products found.</h3>
+						{% endif %}
 					</div>
 				</section>
 				<!-- End Best Seller -->
@@ -342,6 +350,193 @@
 			</div>
 		</div>
 	</div>
+
+<!-- Toast Notification -->
+<div id="cart-toast" class="cart-toast">
+    <div class="toast-content">
+        <span class="toast-icon">✓</span>
+        <span class="toast-message"></span>
+    </div>
+</div>
+
+<!-- AJAX Cart Functionality -->
+<style>
+/* Toast Notification Styles */
+.cart-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    transform: translateX(400px);
+    transition: transform 0.3s ease-in-out;
+    min-width: 300px;
+}
+
+.cart-toast.show {
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-icon {
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.toast-message {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Loading state for add to cart button */
+.add-to-cart-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.add-to-cart-btn.loading .ti-bag:before {
+    content: "\e627"; /* Loading icon */
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success state */
+.add-to-cart-btn.success .ti-bag:before {
+    content: "✓";
+    color: #28a745;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Add to cart AJAX functionality
+    document.querySelectorAll('.add-to-cart-btn').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const productName = this.getAttribute('data-product-name');
+            const originalButton = this;
+
+            // Add loading state
+            originalButton.classList.add('loading');
+
+            // AJAX request
+            fetch(`/cart/add_cart_ajax/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove loading state
+                originalButton.classList.remove('loading');
+
+                if (data.success) {
+                    // Add success state
+                    originalButton.classList.add('success');
+
+                    // Update cart badge
+                    const cartBadge = document.querySelector('.cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = 'flex';
+                    } else if (data.cart_count > 0) {
+                        // Create badge if it doesn't exist
+                        const cartIcon = document.querySelector('.cart-icon');
+                        if (cartIcon) {
+                            const badge = document.createElement('span');
+                            badge.className = 'cart-badge';
+                            badge.textContent = data.cart_count;
+                            cartIcon.appendChild(badge);
+                        }
+                    }
+
+                    // Show success toast
+                    showToast(data.message, 'success');
+
+                    // Remove success state after 2 seconds
+                    setTimeout(() => {
+                        originalButton.classList.remove('success');
+                    }, 2000);
+
+                } else {
+                    showToast(data.message || 'Error adding item to cart', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                originalButton.classList.remove('loading');
+                showToast('Error adding item to cart', 'error');
+            });
+        });
+    });
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('cart-toast');
+        const toastMessage = toast.querySelector('.toast-message');
+
+        toastMessage.textContent = message;
+
+        // Change color based on type
+        if (type === 'error') {
+            toast.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+        } else {
+            toast.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        }
+
+        // Show toast
+        toast.classList.add('show');
+
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+});
+</script>
+
 {% endblock content %}
 
 </body>
