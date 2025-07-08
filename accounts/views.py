@@ -73,3 +73,8 @@ def logout(request):
     auth_logout(request)
     messages.success(request, 'You have been logged out successfully!')
     return redirect('login')
+
+
+@login_required(login_url='login')
+def dashboard(request):
+    return render(request, 'accounts/dashboard.html')
