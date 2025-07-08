@@ -276,16 +276,14 @@
 									{% endfor %}
 								</ul>
 							</li>
-							<li class="nav-item submenu dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
-								 aria-expanded="false">Pages</a>
-								<ul class="dropdown-menu">
-									<li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
-									<li class="nav-item"><a class="nav-link" href="tracking.html">Tracking</a></li>
-									<li class="nav-item"><a class="nav-link" href="elements.html">Elements</a></li>
-								</ul>
-							</li>
 							<li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+							{% if user.is_authenticated %}
+							<li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+							<li class="nav-item"><a class="nav-link" href="{% url "logout" %}">Logout</a></li>
+							{% else %}
+							<li class="nav-item"><a class="nav-link" href="{% url "login" %}">Login</a></li>
+							<li class="nav-item"><a class="nav-link" href="{% url "register" %}">Register</a></li>
+							{% endif %}
 						</ul>
 						<ul class="nav navbar-nav navbar-right">
 							<li class="nav-item">
@@ -327,7 +325,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
-                </div>
+                </div> 
             {% endfor %}
         </div>
     {% endif %}

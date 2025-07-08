@@ -1,5 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
 from .forms import RegistrationForm
 from .models import Account
 
@@ -43,8 +45,31 @@ def register(request):
 
 
 def login(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '')
+        password = request.POST.get('password', '')
+
+        if not email or not password:
+            messages.error(request, 'Please enter both email and password')
+            return redirect('login')
+
+        try:
+            user = Account.objects.get(email=email)
+            if user.check_password(password):
+                auth_login(request, user)
+                messages.success(request, f'Welcome back, {user.first_name}!')
+                return redirect('home')
+            else:
+                messages.error(request, 'Invalid login credentials')
+                return redirect('login')
+        except Account.DoesNotExist:
+            messages.error(request, 'Invalid login credentials')
+            return redirect('login')
+
     return render(request, 'accounts/login.html')
 
-
+@login_required(login_url='login')
 def logout(request):
-    return render(request, 'accounts/logout.html')
+    auth_logout(request)
+    messages.success(request, 'You have been logged out successfully!')
+    return redirect('login')
