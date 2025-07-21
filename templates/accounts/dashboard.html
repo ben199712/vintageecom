@@ -158,6 +158,37 @@
     color: #721c24;
 }
 
+.status-delivered {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-shipped {
+    background: #cce7ff;
+    color: #004085;
+}
+
+.no-orders {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.no-orders i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.no-orders h4 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.no-orders p {
+    margin-bottom: 25px;
+}
+
 .order-details {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -324,7 +355,7 @@
                         <div class="stat-icon">
                             <i class="ti-package"></i>
                         </div>
-                        <div class="stat-number">12</div>
+                        <div class="stat-number">{{ total_orders }}</div>
                         <div class="stat-label">Total Orders</div>
                     </div>
                 </div>
@@ -333,7 +364,7 @@
                         <div class="stat-icon">
                             <i class="ti-check-box"></i>
                         </div>
-                        <div class="stat-number">8</div>
+                        <div class="stat-number">{{ completed_orders }}</div>
                         <div class="stat-label">Completed</div>
                     </div>
                 </div>
@@ -342,7 +373,7 @@
                         <div class="stat-icon">
                             <i class="ti-money"></i>
                         </div>
-                        <div class="stat-number">$1,245</div>
+                        <div class="stat-number">${{ total_spent|floatformat:2 }}</div>
                         <div class="stat-label">Total Spent</div>
                     </div>
                 </div>
@@ -351,7 +382,7 @@
                         <div class="stat-icon">
                             <i class="ti-bag"></i>
                         </div>
-                        <div class="stat-number">5</div>
+                        <div class="stat-number">{{ favorites_count }}</div>
                         <div class="stat-label">Cart</div>
                     </div>
                 </div>
@@ -367,122 +398,54 @@
                 </h2>
             </div>
 
-            <!-- Sample Order 1 -->
-            <div class="order-card">
-                <div class="order-header">
-                    <div class="order-number">Order #ORD-2024-001</div>
-                    <div class="order-status status-completed">Completed</div>
+            {% if recent_orders %}
+                {% for order in recent_orders %}
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-number">Order #{{ order.order_number }}</div>
+                        <div class="order-status status-{{ order.status }}">{{ order.get_status_display }}</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <div class="order-detail-label">Date</div>
+                            <div class="order-detail-value">{{ order.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="order-detail">
+                            <div class="order-detail-label">Items</div>
+                            <div class="order-detail-value">{{ order.items.count }} Item{{ order.items.count|pluralize }}</div>
+                        </div>
+                        <div class="order-detail">
+                            <div class="order-detail-label">Total</div>
+                            <div class="order-detail-value">${{ order.order_total|floatformat:2 }}</div>
+                        </div>
+                        <div class="order-detail">
+                            <div class="order-detail-label">Payment</div>
+                            <div class="order-detail-value">{{ order.get_payment_status_display }}</div>
+                        </div>
+                    </div>
+                    <div class="order-items">
+                        <h6>Items Ordered:</h6>
+                        <ul class="item-list">
+                            {% for item in order.items.all %}
+                            <li>
+                                <span>{{ item.product.product_name }}</span>
+                                <span>${{ item.product_price|floatformat:2 }} x {{ item.quantity }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-                <div class="order-details">
-                    <div class="order-detail">
-                        <div class="order-detail-label">Date</div>
-                        <div class="order-detail-value">Jan 15, 2024</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Items</div>
-                        <div class="order-detail-value">3 Items</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Total</div>
-                        <div class="order-detail-value">$299.99</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Payment</div>
-                        <div class="order-detail-value">Credit Card</div>
-                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-orders">
+                    <i class="ti-package"></i>
+                    <h4>No Orders Yet</h4>
+                    <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
+                    <a href="{% url 'store' %}" class="btn-primary-custom">Start Shopping</a>
                 </div>
-                <div class="order-items">
-                    <h6>Items Ordered:</h6>
-                    <ul class="item-list">
-                        <li>
-                            <span>Wireless Headphones</span>
-                            <span>$149.99</span>
-                        </li>
-                        <li>
-                            <span>Phone Case</span>
-                            <span>$29.99</span>
-                        </li>
-                        <li>
-                            <span>Screen Protector</span>
-                            <span>$19.99</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+            {% endif %}
 
-            <!-- Sample Order 2 -->
-            <div class="order-card">
-                <div class="order-header">
-                    <div class="order-number">Order #ORD-2024-002</div>
-                    <div class="order-status status-processing">Processing</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail">
-                        <div class="order-detail-label">Date</div>
-                        <div class="order-detail-value">Jan 20, 2024</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Items</div>
-                        <div class="order-detail-value">2 Items</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Total</div>
-                        <div class="order-detail-value">$189.98</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Payment</div>
-                        <div class="order-detail-value">PayPal</div>
-                    </div>
-                </div>
-                <div class="order-items">
-                    <h6>Items Ordered:</h6>
-                    <ul class="item-list">
-                        <li>
-                            <span>Bluetooth Speaker</span>
-                            <span>$99.99</span>
-                        </li>
-                        <li>
-                            <span>USB Cable</span>
-                            <span>$14.99</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
 
-            <!-- Sample Order 3 -->
-            <div class="order-card">
-                <div class="order-header">
-                    <div class="order-number">Order #ORD-2024-003</div>
-                    <div class="order-status status-pending">Pending</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail">
-                        <div class="order-detail-label">Date</div>
-                        <div class="order-detail-value">Jan 22, 2024</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Items</div>
-                        <div class="order-detail-value">1 Item</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Total</div>
-                        <div class="order-detail-value">$79.99</div>
-                    </div>
-                    <div class="order-detail">
-                        <div class="order-detail-label">Payment</div>
-                        <div class="order-detail-value">Pending</div>
-                    </div>
-                </div>
-                <div class="order-items">
-                    <h6>Items Ordered:</h6>
-                    <ul class="item-list">
-                        <li>
-                            <span>Wireless Mouse</span>
-                            <span>$79.99</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
         </div>
 
         <!-- Payment History Section -->
@@ -507,42 +470,35 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>TXN-2024-001</strong></td>
-                            <td>Jan 15, 2024</td>
-                            <td>ORD-2024-001</td>
-                            <td>
-                                <span class="badge" style="background: #007bff; color: white;">Credit Card</span>
-                            </td>
-                            <td><strong>$299.99</strong></td>
-                            <td>
-                                <span class="order-status status-completed">Paid</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>TXN-2024-002</strong></td>
-                            <td>Jan 20, 2024</td>
-                            <td>ORD-2024-002</td>
-                            <td>
-                                <span class="badge" style="background: #28a745; color: white;">PayPal</span>
-                            </td>
-                            <td><strong>$189.98</strong></td>
-                            <td>
-                                <span class="order-status status-processing">Processing</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>TXN-2024-003</strong></td>
-                            <td>Jan 22, 2024</td>
-                            <td>ORD-2024-003</td>
-                            <td>
-                                <span class="badge" style="background: #ffc107; color: black;">Bank Transfer</span>
-                            </td>
-                            <td><strong>$79.99</strong></td>
-                            <td>
-                                <span class="order-status status-pending">Pending</span>
-                            </td>
-                        </tr>
+                        {% if payments %}
+                            {% for payment in payments %}
+                            <tr>
+                                <td><strong>{{ payment.payment_id }}</strong></td>
+                                <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                                <td>{{ payment.order.order_number }}</td>
+                                <td>
+                                    <span class="badge" style="background:
+                                        {% if payment.payment_method == 'credit_card' %}#007bff
+                                        {% elif payment.payment_method == 'paypal' %}#28a745
+                                        {% elif payment.payment_method == 'bank_transfer' %}#ffc107
+                                        {% else %}#6c757d{% endif %};
+                                        color: {% if payment.payment_method == 'bank_transfer' %}black{% else %}white{% endif %};">
+                                        {{ payment.get_payment_method_display }}
+                                    </span>
+                                </td>
+                                <td><strong>${{ payment.amount_paid|floatformat:2 }}</strong></td>
+                                <td>
+                                    <span class="order-status status-{{ payment.status }}">{{ payment.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <p>No payment history available.</p>
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>

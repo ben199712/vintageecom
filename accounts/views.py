@@ -1,9 +1,16 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from .forms import RegistrationForm
 from .models import Account
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 # Create your views here.
 
@@ -77,4 +84,70 @@ def logout(request):
 
 @login_required(login_url='login')
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    # Import here to avoid circular imports
+    from orders.models import Order, Payment
+    from django.db.models import Sum, Count, Q
+
+    # Get user's orders
+    user_orders = Order.objects.filter(user=request.user).order_by('-created_at')
+
+    # Calculate statistics
+    total_orders = user_orders.count()
+    completed_orders = user_orders.filter(status='delivered').count()
+
+    # Calculate total spent (only for paid orders)
+    total_spent = user_orders.filter(
+        payment_status='paid'
+    ).aggregate(
+        total=Sum('order_total')
+    )['total'] or 0
+
+    # Get recent orders (last 10)
+    recent_orders = user_orders[:10]
+
+    # Get payment history
+    user_payments = Payment.objects.filter(user=request.user).order_by('-created_at')[:10]
+
+    # Prepare context data
+    context = {
+        'total_orders': total_orders,
+        'completed_orders': completed_orders,
+        'total_spent': total_spent,
+        'favorites_count': 0,  # You can implement wishlist later
+        'recent_orders': recent_orders,
+        'payments': user_payments,
+    }
+
+    return render(request, 'accounts/dashboard.html', context)
+
+
+def forgotpassword(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '')
+
+        if not email:
+            messages.error(request, 'Please enter your email address')
+            return redirect('forgotpassword')
+
+        try:
+            user = Account.objects.get(email=email)
+            # Send reset email
+            current_site = get_current_site(request)
+            mail_subject = 'Reset Your Password'
+            message = render_to_string('accounts/reset_password_email.html', {
+                'user': user,
+                'domain': current_site,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+            })
+            to_email = email
+            email_message = EmailMessage(mail_subject, message, settings.EMAIL_HOST_USER, [to_email])
+            email_message.send()
+            messages.success(request, f'Password reset instructions have been sent to {email}')
+            return redirect('login')  # or wherever you want to redirect
+        except Account.DoesNotExist:
+            messages.error(request, 'No account found with that email address')
+            return redirect('forgotpassword')
+
+    return render(request, 'accounts/forgotpassword.html')
+
