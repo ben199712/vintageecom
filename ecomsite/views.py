@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from store.models import Product
 
 def home(request):
@@ -12,5 +12,3 @@ def home(request):
     }
     return render(request, 'index.html', context)
 
-def contact(request):
-    return render(request, 'contact.html')

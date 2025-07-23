@@ -3,6 +3,9 @@ from .models import Product, Category
 from carts.models import CartItem
 from django.core.paginator import  Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
+from django.core.mail import send_mail
+from django.conf import settings
+from .forms import ContactForm
 
 # Create your views here.
 def store(request, category_slug=None):
@@ -56,3 +59,14 @@ def search(request):
     }
             
     return render(request, 'store/store.html', context)
+
+def contact(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return render(request, 'store/contact.html', {'form': form, 'success': True})
+        else:
+            return render(request, 'store/contact.html', {'form': form, 'success': False})
+
+    return render(request, 'store/contact.html', {'form': ContactForm()})
