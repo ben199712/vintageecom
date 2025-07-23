@@ -276,7 +276,7 @@
 									{% endfor %}
 								</ul>
 							</li>
-							<li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+							<li class="nav-item"><a class="nav-link" href="{% url "contact" %}">Contact</a></li>
 							{% if user.is_authenticated %}
 							<li class="nav-item"><a class="nav-link" href="{% url "dashboard" %}">Dashboard</a></li>
 							<li class="nav-item"><a class="nav-link" href="{% url "logout" %}">Logout</a></li>
@@ -432,18 +432,127 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 
 	<!-- Cart Badge Enhancement Script -->
 	<script>
+		// Global function to update cart badge
+		function updateCartBadge(cartCount) {
+			const cartBadge = document.querySelector('.cart-badge');
+			const cartIcon = document.querySelector('.cart-icon');
+
+			if (cartCount > 0) {
+				if (cartBadge) {
+					cartBadge.textContent = cartCount > 99 ? '99+' : cartCount;
+					cartBadge.style.display = 'flex';
+
+					// Add large-count class for numbers > 9
+					if (cartCount > 9) {
+						cartBadge.classList.add('large-count');
+					} else {
+						cartBadge.classList.remove('large-count');
+					}
+				} else {
+					// Create badge if it doesn't exist
+					const newBadge = document.createElement('span');
+					newBadge.className = 'cart-badge';
+					newBadge.textContent = cartCount > 99 ? '99+' : cartCount;
+					if (cartCount > 9) {
+						newBadge.classList.add('large-count');
+					}
+					cartIcon.appendChild(newBadge);
+				}
+			} else {
+				// Hide badge if cart is empty
+				if (cartBadge) {
+					cartBadge.style.display = 'none';
+				}
+			}
+
+			// Update dashboard cart count if on dashboard page
+			const dashboardCartCount = document.getElementById('dashboard-cart-count');
+			if (dashboardCartCount) {
+				dashboardCartCount.textContent = cartCount;
+
+				// Add animation effect
+				dashboardCartCount.style.transform = 'scale(1.2)';
+				dashboardCartCount.style.color = '#ffba00';
+
+				setTimeout(() => {
+					dashboardCartCount.style.transform = 'scale(1)';
+					dashboardCartCount.style.color = '#333';
+				}, 300);
+			}
+
+			// Trigger storage event for other tabs
+			localStorage.setItem('cart_updated', Date.now());
+		}
+
+		// Global function to fetch and update cart count
+		function refreshCartCount() {
+			fetch('/cart/get_cart_count/', {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					updateCartBadge(data.cart_count);
+				}
+			})
+			.catch(error => {
+				console.log('Error fetching cart count:', error);
+			});
+		}
+
+		// Get CSRF token function
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+
+		// Global function to add item to cart
+		function addToCartGlobal(productId, callback) {
+			fetch(`/cart/add_cart_ajax/${productId}/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': getCookie('csrftoken'),
+				},
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					updateCartBadge(data.cart_count);
+					if (callback) callback(data);
+				}
+			})
+			.catch(error => {
+				console.log('Error adding to cart:', error);
+			});
+		}
+
 		document.addEventListener('DOMContentLoaded', function() {
+			// Initialize cart badge on page load
 			const cartBadge = document.querySelector('.cart-badge');
 			if (cartBadge) {
 				const count = parseInt(cartBadge.textContent);
-				// Add large-count class for numbers > 99
-				if (count > 99) {
-					cartBadge.classList.add('large-count');
-					cartBadge.textContent = '99+';
-				} else if (count > 9) {
-					cartBadge.classList.add('large-count');
-				}
+				updateCartBadge(count);
 			}
+
+			// Refresh cart count on page load to ensure accuracy
+			refreshCartCount();
+
+			// Refresh cart count every 30 seconds (optional)
+			// setInterval(refreshCartCount, 30000);
 		});
 	</script>
 

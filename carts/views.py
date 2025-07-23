@@ -1,6 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from store.models import Product, Category
 from .models import Cart, CartItem
 
@@ -179,13 +181,16 @@ def remove_cart_item(request, product_id):
 
 def cart(request, total=0, quantity=0, cart_items=None):
     try:
+        # Use session-based cart for all users
         cart = Cart.objects.get(cart_id=cart_id(request))
         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+
         for cart_item in cart_items:
             total += (cart_item.product.price * cart_item.quantity)
             quantity += cart_item.quantity
+
     except ObjectDoesNotExist:
-        pass
+        cart_items = []
 
     context = {
         'total': total,
@@ -193,7 +198,229 @@ def cart(request, total=0, quantity=0, cart_items=None):
         'cart_items': cart_items,
     }
 
-    return render(request, 'store/cart.html',context)
+    return render(request, 'store/cart.html', context)
 
-def checkout(request):
-    return render(request, 'store/checkout.html')
+
+def get_cart_count(request):
+    """
+    API endpoint to get current cart count
+    """
+    cart_count = 0
+    try:
+        cart = Cart.objects.get(cart_id=cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        for cart_item in cart_items:
+            cart_count += cart_item.quantity
+    except Cart.DoesNotExist:
+        cart_count = 0
+
+    return JsonResponse({
+        'success': True,
+        'cart_count': cart_count
+    })
+
+def checkout(request, total=0, quantity=0, cart_items=None):
+    """
+    Complete checkout view that handles:
+    1. Cart validation
+    2. User authentication check
+    3. Order form processing
+    4. Tax calculation
+    5. Order creation
+    """
+
+    # Get cart and calculate totals (use session-based cart for all users)
+    try:
+        cart = Cart.objects.get(cart_id=cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+    except Cart.DoesNotExist:
+        cart_items = []
+
+    # Calculate totals
+    for cart_item in cart_items:
+        total += (cart_item.product.price * cart_item.quantity)
+        quantity += cart_item.quantity
+
+    # Calculate tax (8% for example)
+    tax = (8 * total) / 100
+    grand_total = total + tax
+
+    # Check if cart is empty
+    if not cart_items:
+        messages.warning(request, 'Your cart is empty. Please add items before checkout.')
+        return redirect('cart')
+
+    # Check if user is authenticated
+    if not request.user.is_authenticated:
+        messages.warning(request, 'Please login to proceed with checkout.')
+        return redirect('login')
+
+    # Handle form submission
+    if request.method == 'POST':
+        from orders.forms import OrderForm
+        form = OrderForm(request.POST)
+
+        if form.is_valid():
+            # Create order
+            from orders.models import Order, OrderItem, Payment
+            import datetime
+
+            # Generate order number
+            year = int(datetime.date.today().strftime('%Y'))
+            month = int(datetime.date.today().strftime('%m'))
+            day = int(datetime.date.today().strftime('%d'))
+            date = datetime.date(year, month, day)
+            current_date = date.strftime("%Y%m%d")
+
+            order_number = current_date + str(total)
+
+            # Create order instance
+            order = Order()
+            order.user = request.user
+            order.first_name = form.cleaned_data['first_name']
+            order.last_name = form.cleaned_data['last_name']
+            order.phone = form.cleaned_data['phone']
+            order.email = form.cleaned_data['email']
+            order.address_line_1 = form.cleaned_data['address_line_1']
+            order.address_line_2 = form.cleaned_data['address_line_2']
+            order.country = form.cleaned_data['country']
+            order.state = form.cleaned_data['state']
+            order.city = form.cleaned_data['city']
+            order.order_number = order_number
+            order.order_total = grand_total
+            order.tax = tax
+            order.save()
+
+            # Create order items
+            for item in cart_items:
+                order_item = OrderItem()
+                order_item.order = order
+                order_item.product = item.product
+                order_item.quantity = item.quantity
+                order_item.product_price = item.product.price
+                order_item.ordered = True
+                order_item.save()
+
+            # Store order in session for payment processing
+            request.session['order_id'] = order.id
+
+            messages.success(request, 'Order placed successfully! Please proceed with payment.')
+            return redirect('payment')
+
+        else:
+            messages.error(request, 'Please correct the errors below.')
+
+    else:
+        # Pre-fill form with user data if available
+        from orders.forms import OrderForm
+        initial_data = {}
+        if request.user.is_authenticated:
+            initial_data = {
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'email': request.user.email,
+                'phone': getattr(request.user, 'phone_number', ''),
+            }
+        form = OrderForm(initial=initial_data)
+
+    context = {
+        'total': total,
+        'quantity': quantity,
+        'cart_items': cart_items,
+        'tax': tax,
+        'grand_total': grand_total,
+        'form': form,
+    }
+
+    return render(request, 'store/checkout.html', context)
+
+
+def payment(request):
+    """
+    Payment processing view
+    """
+    # Get order from session
+    order_id = request.session.get('order_id')
+    if not order_id:
+        messages.error(request, 'No order found. Please place an order first.')
+        return redirect('checkout')
+
+    try:
+        from orders.models import Order
+        order = Order.objects.get(id=order_id, user=request.user)
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('checkout')
+
+    context = {
+        'order': order,
+    }
+
+    return render(request, 'store/payment.html', context)
+
+
+def payment_success(request):
+    """
+    Handle successful payment
+    """
+    order_id = request.session.get('order_id')
+    if not order_id:
+        messages.error(request, 'No order found.')
+        return redirect('store')
+
+    try:
+        from orders.models import Order, Payment
+        order = Order.objects.get(id=order_id, user=request.user)
+
+        # Update order status
+        order.is_ordered = True
+        order.status = 'processing'
+        order.payment_status = 'paid'
+        order.save()
+
+        # Create payment record
+        payment = Payment.objects.create(
+            user=request.user,
+            order=order,
+            payment_id=f"PAY-{order.order_number}",
+            payment_method='paypal',  # You can make this dynamic
+            amount_paid=order.order_total,
+            status='completed'
+        )
+
+        # Clear cart after successful payment (use session-based cart)
+        try:
+            cart = Cart.objects.get(cart_id=cart_id(request))
+            CartItem.objects.filter(cart=cart).delete()
+        except Cart.DoesNotExist:
+            pass  # Cart already empty or doesn't exist
+
+        # Clear session
+        if 'order_id' in request.session:
+            del request.session['order_id']
+
+        messages.success(request, f'Payment successful! Your order #{order.order_number} has been placed.')
+        return redirect('order_complete', order_number=order.order_number)
+
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('store')
+
+
+def order_complete(request, order_number):
+    """
+    Order completion page
+    """
+    try:
+        from orders.models import Order
+        order = Order.objects.get(order_number=order_number, user=request.user, is_ordered=True)
+
+        context = {
+            'order': order,
+        }
+
+        return render(request, 'store/order_complete.html', context)
+
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('store')

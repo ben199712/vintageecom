@@ -11,3 +11,6 @@ def home(request):
         'coming_soon_products': coming_soon_products,
     }
     return render(request, 'index.html', context)
+
+def contact(request):
+    return render(request, 'contact.html')

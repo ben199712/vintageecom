@@ -476,19 +476,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Add success state
                     originalButton.classList.add('success');
 
-                    // Update cart badge
-                    const cartBadge = document.querySelector('.cart-badge');
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count;
-                        cartBadge.style.display = 'flex';
-                    } else if (data.cart_count > 0) {
-                        // Create badge if it doesn't exist
-                        const cartIcon = document.querySelector('.cart-icon');
-                        if (cartIcon) {
-                            const badge = document.createElement('span');
-                            badge.className = 'cart-badge';
-                            badge.textContent = data.cart_count;
-                            cartIcon.appendChild(badge);
+                    // Update cart badge using global function
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge(data.cart_count);
+                    } else {
+                        // Fallback if global function not available
+                        const cartBadge = document.querySelector('.cart-badge');
+                        if (cartBadge) {
+                            cartBadge.textContent = data.cart_count;
+                            cartBadge.style.display = 'flex';
+                        } else if (data.cart_count > 0) {
+                            const cartIcon = document.querySelector('.cart-icon');
+                            if (cartIcon) {
+                                const badge = document.createElement('span');
+                                badge.className = 'cart-badge';
+                                badge.textContent = data.cart_count;
+                                cartIcon.appendChild(badge);
+                            }
                         }
                     }
 

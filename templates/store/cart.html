@@ -237,61 +237,11 @@
                                 <td>
 
                                 </td>
-                                <td>
-                                    <h5>Subtotal</h5>
-                                </td>
-                                <td>
-                                    <h5>${{ total }}</h5>
-                                </td>
-                            </tr>
-                            <tr class="shipping_area">
-                                <td>
 
-                                </td>
-                                <td>
-
-                                </td>
-                                <td>
-                                    <h5>Shipping</h5>
-                                </td>
-                                <td>
-                                    <div class="shipping_box">
-                                        <ul class="list">
-                                            <li><a href="#">Flat Rate: $5.00</a></li>
-                                            <li><a href="#">Free Shipping</a></li>
-                                            <li><a href="#">Flat Rate: $10.00</a></li>
-                                            <li class="active"><a href="#">Local Delivery: $2.00</a></li>
-                                        </ul>
-                                        <h6>Calculate Shipping <i class="fa fa-caret-down" aria-hidden="true"></i></h6>
-                                        <select class="shipping_select">
-                                            <option value="1">Bangladesh</option>
-                                            <option value="2">India</option>
-                                            <option value="4">Pakistan</option>
-                                        </select>
-                                        <select class="shipping_select">
-                                            <option value="1">Select a State</option>
-                                            <option value="2">Select a State</option>
-                                            <option value="4">Select a State</option>
-                                        </select>
-                                        <input type="text" placeholder="Postcode/Zipcode">
-                                        <a class="gray_btn" href="#">Update Details</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="out_button_area">
-                                <td>
-
-                                </td>
-                                <td>
-
-                                </td>
-                                <td>
-
-                                </td>
                                 <td>
                                     <div class="checkout_btn_inner d-flex align-items-center">
                                         <a class="gray_btn" href="{% url "store" %}">Continue Shopping</a>
-                                        <a class="primary-btn" href="#">Proceed to checkout</a>
+                                        <a class="primary-btn" href="{% url 'checkout' %}" onclick="return validateCheckout()">Proceed to checkout</a>
                                     </div>
                                 </td>
                             </tr>
@@ -452,15 +402,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update cart display
     function updateCartDisplay(data, productId) {
-        // Update cart badge
-        const cartBadge = document.querySelector('.cart-badge');
-        if (cartBadge) {
-            if (data.cart_count > 0) {
-                cartBadge.textContent = data.cart_count;
-                cartBadge.style.display = 'flex';
-            } else {
-                cartBadge.style.display = 'none';
-            }
+        // Update cart badge using global function
+        if (typeof updateCartBadge === 'function') {
+            updateCartBadge(data.cart_count);
         }
 
         // Update total
@@ -544,11 +488,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
 
-                    // Update cart badge
-                    const cartBadge = document.querySelector('.cart-badge');
-                    if (cartBadge && data.cart_count) {
-                        cartBadge.textContent = data.cart_count;
-                        cartBadge.style.display = 'flex';
+                    // Update cart badge using global function
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge(data.cart_count);
                     }
 
                     // Update total
@@ -696,5 +638,36 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: 500;
 }
 </style>
+
+<!-- Checkout Validation Script -->
+<script>
+// Validate checkout function
+function validateCheckout() {
+    // Method 1: Check Django template context (most reliable)
+    const cartItemCount = {{ cart_items|length|default:0 }};
+    const cartTotal = {{ total|default:0 }};
+
+    console.log('Cart validation - Items:', cartItemCount, 'Total:', cartTotal);
+
+    if (cartItemCount === 0) {
+        alert('Your cart is empty. Please add items before proceeding to checkout.');
+        return false;
+    }
+
+    if (cartTotal <= 0) {
+        alert('Your cart total must be greater than $0 to proceed to checkout.');
+        return false;
+    }
+
+    // Method 2: DOM check as backup
+    const quantityInputs = document.querySelectorAll('.quantity-input');
+    if (quantityInputs.length === 0) {
+        alert('No items found in your cart. Please add items before proceeding to checkout.');
+        return false;
+    }
+
+    return true; // Allow navigation to checkout
+}
+</script>
 
 {% endblock content %}

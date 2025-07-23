@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+    <!-- Start Banner Area -->
+    <section class="banner-area organic-breadcrumb">
+        <div class="container">
+            <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+                <div class="col-first">
+                    <h1>Payment</h1>
+                    <nav class="d-flex align-items-center">
+                        <a href="{% url 'store' %}">Home<span class="lnr lnr-arrow-right"></span></a>
+                        <a href="{% url 'checkout' %}">Checkout<span class="lnr lnr-arrow-right"></span></a>
+                        <a href="#">Payment</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- End Banner Area -->
+
+    <!--================Payment Area =================-->
+    <section class="payment_area section_gap">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="payment_details">
+                        <h3>Payment Details</h3>
+                        <div class="order_summary">
+                            <h4>Order Summary</h4>
+                            <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+                            <p><strong>Total Amount:</strong> ${{ order.order_total|floatformat:2 }}</p>
+                            <p><strong>Payment Method:</strong> PayPal</p>
+                        </div>
+                        
+                        <div class="payment_method">
+                            <h4>Choose Payment Method</h4>
+                            
+                            <!-- PayPal Payment -->
+                            <div class="payment_option">
+                                <div class="payment_item active">
+                                    <div class="radion_btn">
+                                        <input type="radio" id="paypal" name="payment_method" value="paypal" checked>
+                                        <label for="paypal">PayPal</label>
+                                        <div class="check"></div>
+                                    </div>
+                                    <p>Pay securely with PayPal. You can use your PayPal account or credit card.</p>
+                                </div>
+                                
+                                <!-- PayPal Button -->
+                                <div class="paypal_button">
+                                    <form action="{% url 'payment_success' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="primary-btn">Pay with PayPal</button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Credit Card Payment (Future Implementation) -->
+                            <div class="payment_option">
+                                <div class="payment_item">
+                                    <div class="radion_btn">
+                                        <input type="radio" id="credit_card" name="payment_method" value="credit_card">
+                                        <label for="credit_card">Credit Card</label>
+                                        <div class="check"></div>
+                                    </div>
+                                    <p>Pay with your credit or debit card. (Coming Soon)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="order_box">
+                        <h2>Order Details</h2>
+                        <div class="order_info">
+                            <h4>Billing Information</h4>
+                            <p><strong>{{ order.first_name }} {{ order.last_name }}</strong></p>
+                            <p>{{ order.address_line_1 }}</p>
+                            {% if order.address_line_2 %}
+                            <p>{{ order.address_line_2 }}</p>
+                            {% endif %}
+                            <p>{{ order.city }}, {{ order.state }}</p>
+                            <p>{{ order.country }}</p>
+                            <p>Email: {{ order.email }}</p>
+                            <p>Phone: {{ order.phone }}</p>
+                        </div>
+                        
+                        <div class="order_total">
+                            <h4>Order Total</h4>
+                            <ul class="list list_2">
+                                <li><a href="#">Subtotal <span>${{ order.order_total|add:order.tax|floatformat:2 }}</span></a></li>
+                                <li><a href="#">Tax <span>${{ order.tax|floatformat:2 }}</span></a></li>
+                                <li><a href="#"><strong>Total <span>${{ order.order_total|floatformat:2 }}</span></strong></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--================End Payment Area =================-->
+
+    <style>
+    .payment_area {
+        padding: 80px 0;
+    }
+    
+    .payment_details {
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .order_summary {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    
+    .payment_option {
+        margin-bottom: 20px;
+        padding: 20px;
+        border: 1px solid #e1e5e9;
+        border-radius: 8px;
+    }
+    
+    .payment_option.active {
+        border-color: #ffba00;
+        background: #fff9e6;
+    }
+    
+    .paypal_button {
+        margin-top: 15px;
+    }
+    
+    .order_info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .order_info h4 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+    
+    .order_info p {
+        margin-bottom: 5px;
+        color: #666;
+    }
+    
+    .order_total {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e1e5e9;
+    }
+    
+    .primary-btn {
+        background: linear-gradient(135deg, #ffba00, #ff6c00);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 186, 0, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    </style>
+
+{% endblock content %}

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+    <!-- Start Banner Area -->
+    <section class="banner-area organic-breadcrumb">
+        <div class="container">
+            <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+                <div class="col-first">
+                    <h1>Order Complete</h1>
+                    <nav class="d-flex align-items-center">
+                        <a href="{% url 'store' %}">Home<span class="lnr lnr-arrow-right"></span></a>
+                        <a href="#">Order Complete</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- End Banner Area -->
+
+    <!--================Order Complete Area =================-->
+    <section class="order_complete_area section_gap">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="order_complete_content">
+                        <!-- Success Message -->
+                        <div class="success_message">
+                            <div class="success_icon">
+                                <i class="ti-check-box"></i>
+                            </div>
+                            <h2>Thank You for Your Order!</h2>
+                            <p>Your order has been successfully placed and is being processed.</p>
+                        </div>
+                        
+                        <!-- Order Details -->
+                        <div class="order_details">
+                            <h3>Order Details</h3>
+                            <div class="order_info_box">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info_item">
+                                            <h4>Order Number</h4>
+                                            <p><strong>{{ order.order_number }}</strong></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info_item">
+                                            <h4>Order Date</h4>
+                                            <p>{{ order.created_at|date:"F d, Y" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info_item">
+                                            <h4>Total Amount</h4>
+                                            <p><strong>${{ order.order_total|floatformat:2 }}</strong></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info_item">
+                                            <h4>Payment Status</h4>
+                                            <p><span class="status_badge status_{{ order.payment_status }}">{{ order.get_payment_status_display }}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Shipping Information -->
+                        <div class="shipping_info">
+                            <h3>Shipping Information</h3>
+                            <div class="shipping_address">
+                                <p><strong>{{ order.first_name }} {{ order.last_name }}</strong></p>
+                                <p>{{ order.address_line_1 }}</p>
+                                {% if order.address_line_2 %}
+                                <p>{{ order.address_line_2 }}</p>
+                                {% endif %}
+                                <p>{{ order.city }}, {{ order.state }}</p>
+                                <p>{{ order.country }}</p>
+                                <p>Phone: {{ order.phone }}</p>
+                                <p>Email: {{ order.email }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Items -->
+                        <div class="order_items">
+                            <h3>Items Ordered</h3>
+                            <div class="items_list">
+                                {% for item in order.items.all %}
+                                <div class="item_row">
+                                    <div class="item_info">
+                                        <h4>{{ item.product.product_name }}</h4>
+                                        <p>Quantity: {{ item.quantity }}</p>
+                                        <p>Price: ${{ item.product_price|floatformat:2 }}</p>
+                                    </div>
+                                    <div class="item_total">
+                                        <strong>${{ item.get_total_price|floatformat:2 }}</strong>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="order_summary">
+                                <div class="summary_row">
+                                    <span>Subtotal:</span>
+                                    <span>${{ order.order_total|add:order.tax|floatformat:2 }}</span>
+                                </div>
+                                <div class="summary_row">
+                                    <span>Tax:</span>
+                                    <span>${{ order.tax|floatformat:2 }}</span>
+                                </div>
+                                <div class="summary_row total_row">
+                                    <span><strong>Total:</strong></span>
+                                    <span><strong>${{ order.order_total|floatformat:2 }}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="action_buttons">
+                            <a href="{% url 'dashboard' %}" class="primary-btn">View Dashboard</a>
+                            <a href="{% url 'store' %}" class="secondary-btn">Continue Shopping</a>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="additional_info">
+                            <h4>What's Next?</h4>
+                            <ul>
+                                <li>You will receive an email confirmation shortly</li>
+                                <li>Your order will be processed within 1-2 business days</li>
+                                <li>You can track your order status in your dashboard</li>
+                                <li>Contact us if you have any questions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--================End Order Complete Area =================-->
+
+    <style>
+    .order_complete_area {
+        padding: 80px 0;
+        background: #f8f9fa;
+    }
+    
+    .order_complete_content {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .success_message {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-radius: 10px;
+    }
+    
+    .success_icon i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+    
+    .success_message h2 {
+        margin-bottom: 10px;
+        font-size: 2rem;
+    }
+    
+    .order_details, .shipping_info, .order_items {
+        margin-bottom: 30px;
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .order_details h3, .shipping_info h3, .order_items h3 {
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 2px solid #ffba00;
+        padding-bottom: 10px;
+    }
+    
+    .info_item {
+        margin-bottom: 15px;
+    }
+    
+    .info_item h4 {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+    
+    .status_badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status_paid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .item_row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #e1e5e9;
+    }
+    
+    .order_summary {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .summary_row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e1e5e9;
+    }
+    
+    .total_row {
+        border-bottom: none;
+        border-top: 2px solid #ffba00;
+        padding-top: 15px;
+        margin-top: 10px;
+    }
+    
+    .action_buttons {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .primary-btn, .secondary-btn {
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        margin: 0 10px;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .primary-btn {
+        background: linear-gradient(135deg, #ffba00, #ff6c00);
+        color: white;
+    }
+    
+    .secondary-btn {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .primary-btn:hover, .secondary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .additional_info {
+        background: #e8f4fd;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .additional_info h4 {
+        color: #0c5460;
+        margin-bottom: 15px;
+    }
+    
+    .additional_info ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    .additional_info li {
+        margin-bottom: 8px;
+        color: #0c5460;
+    }
+    </style>
+
+{% endblock content %}

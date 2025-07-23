@@ -86,6 +86,8 @@ def logout(request):
 def dashboard(request):
     # Import here to avoid circular imports
     from orders.models import Order, Payment
+    from carts.models import Cart, CartItem
+    from carts.views import cart_id
     from django.db.models import Sum, Count, Q
 
     # Get user's orders
@@ -102,6 +104,16 @@ def dashboard(request):
         total=Sum('order_total')
     )['total'] or 0
 
+    # Get current cart count
+    cart_count = 0
+    try:
+        cart = Cart.objects.get(cart_id=cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        for cart_item in cart_items:
+            cart_count += cart_item.quantity
+    except Cart.DoesNotExist:
+        cart_count = 0
+
     # Get recent orders (last 10)
     recent_orders = user_orders[:10]
 
@@ -113,6 +125,7 @@ def dashboard(request):
         'total_orders': total_orders,
         'completed_orders': completed_orders,
         'total_spent': total_spent,
+        'cart_count': cart_count,  # Real cart count
         'favorites_count': 0,  # You can implement wishlist later
         'recent_orders': recent_orders,
         'payments': user_payments,

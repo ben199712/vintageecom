@@ -11,5 +11,9 @@ urlpatterns = [
     path('remove_cart_item_ajax/<int:product_id>/', views.remove_cart_item_ajax, name='remove_cart_item_ajax'),
 
     path('checkout/', views.checkout, name='checkout'),
-    
+    path('payment/', views.payment, name='payment'),
+    path('payment-success/', views.payment_success, name='payment_success'),
+    path('order-complete/<str:order_number>/', views.order_complete, name='order_complete'),
+    path('get_cart_count/', views.get_cart_count, name='get_cart_count'),
+
 ]

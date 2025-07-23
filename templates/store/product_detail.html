@@ -56,7 +56,7 @@
 								<a class="primary-btn" href="#"><i class="lnr lnr-cart mr-2"></i>In your Cart</a>
 								<a class="btn btn-primary mr-2" href="{% url 'cart' %}">View Cart <i class="lnr lnr-eye mr-2"></i></a>
 							{% else %}
-								<a class="primary-btn" href="{% url 'add_cart' single_product.id %}">Add to Cart</a>
+								<a class="primary-btn" href="#" onclick="addToCartAjax({{ single_product.id }}); return false;">Add to Cart</a>
 							{% endif %}
 							<a class="icon_btn" href="#"><i class="lnr lnr lnr-heart"></i></a>
 						</div>
@@ -514,6 +514,124 @@
 		</div>
 	</section>
 	<!-- End related-product Area -->
+<!-- Product Detail AJAX Script -->
+<script>
+function addToCartAjax(productId) {
+    const button = event.target;
+    const originalText = button.textContent;
+
+    // Show loading state
+    button.textContent = 'Adding...';
+    button.disabled = true;
+
+    fetch(`/cart/add_cart_ajax/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart badge using global function
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+
+            // Show success feedback
+            button.textContent = 'Added!';
+            button.style.background = '#28a745';
+
+            // Reload page after 1 second to show "In Cart" state
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            // Show error
+            button.textContent = 'Error!';
+            button.style.background = '#dc3545';
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '';
+                button.disabled = false;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.log('Error adding to cart:', error);
+        button.textContent = 'Error!';
+        button.style.background = '#dc3545';
+
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = '';
+            button.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+
+<!-- Product Detail AJAX Script -->
+<script>
+function addToCartAjax(productId) {
+    const button = event.target;
+    const originalText = button.textContent;
+
+    // Show loading state
+    button.textContent = 'Adding...';
+    button.disabled = true;
+
+    fetch(`/cart/add_cart_ajax/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart badge using global function
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+
+            // Show success feedback
+            button.textContent = 'Added!';
+            button.style.background = '#28a745';
+
+            // Reload page after 1 second to show "In Cart" state
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            // Show error
+            button.textContent = 'Error!';
+            button.style.background = '#dc3545';
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '';
+                button.disabled = false;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.log('Error adding to cart:', error);
+        button.textContent = 'Error!';
+        button.style.background = '#dc3545';
+
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = '';
+            button.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+
 {% endblock content %}
 </body>
 

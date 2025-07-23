@@ -380,10 +380,10 @@
                 <div class="col-md-3 col-sm-6 mb-4">
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="ti-bag"></i>
+                            <i class="ti-shopping-cart"></i>
                         </div>
-                        <div class="stat-number">{{ favorites_count }}</div>
-                        <div class="stat-label">Cart</div>
+                        <div class="stat-number" id="dashboard-cart-count">{{ cart_count }}</div>
+                        <div class="stat-label">Cart Items</div>
                     </div>
                 </div>
             </div>
@@ -526,7 +526,7 @@
                     </a>
                 </div>
                 <div class="col-md-4 col-sm-6 mb-3">
-                    <a href="#" class="btn-primary-custom d-block text-center">
+                    <a href="{% url "contact" %}" class="btn-primary-custom d-block text-center">
                         <i class="ti-headphone-alt"></i><br>
                         Support
                     </a>
@@ -535,5 +535,60 @@
         </div>
     </div>
 </div>
+
+<!-- Dashboard Cart Update Script -->
+<script>
+// Function to update dashboard cart count
+function updateDashboardCartCount() {
+    fetch('/cart/get_cart_count/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update dashboard cart count
+            const dashboardCartCount = document.getElementById('dashboard-cart-count');
+            if (dashboardCartCount) {
+                dashboardCartCount.textContent = data.cart_count;
+
+                // Add animation effect
+                dashboardCartCount.style.transform = 'scale(1.2)';
+                dashboardCartCount.style.color = '#ffba00';
+
+                setTimeout(() => {
+                    dashboardCartCount.style.transform = 'scale(1)';
+                    dashboardCartCount.style.color = '#333';
+                }, 300);
+            }
+
+            // Also update navbar cart badge
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+        }
+    })
+    .catch(error => {
+        console.log('Error fetching cart count:', error);
+    });
+}
+
+// Update cart count when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateDashboardCartCount();
+
+    // Update cart count every 10 seconds while on dashboard
+    setInterval(updateDashboardCartCount, 10000);
+});
+
+// Listen for storage events (when cart is updated in another tab)
+window.addEventListener('storage', function(e) {
+    if (e.key === 'cart_updated') {
+        updateDashboardCartCount();
+    }
+});
+</script>
 
 {% endblock content %}
