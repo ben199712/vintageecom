@@ -360,50 +360,67 @@ def payment(request):
 
 
 def payment_success(request):
-    """
-    Handle successful payment
-    """
+    import os
+    import requests
+    tx_ref = request.GET.get('tx_ref') or request.session.get('tx_ref')
     order_id = request.session.get('order_id')
-    if not order_id:
-        messages.error(request, 'No order found.')
+    if not order_id or not tx_ref:
+        messages.error(request, 'No order or transaction reference found.')
         return redirect('store')
 
-    try:
-        from orders.models import Order, Payment
-        order = Order.objects.get(id=order_id, user=request.user)
-
-        # Update order status
-        order.is_ordered = True
-        order.status = 'processing'
-        order.payment_status = 'paid'
-        order.save()
-
-        # Create payment record
-        payment = Payment.objects.create(
-            user=request.user,
-            order=order,
-            payment_id=f"PAY-{order.order_number}",
-            payment_method='paypal',  # You can make this dynamic
-            amount_paid=order.order_total,
-            status='completed'
-        )
-
-        # Clear cart after successful payment (use session-based cart)
-        try:
-            cart = Cart.objects.get(cart_id=cart_id(request))
-            CartItem.objects.filter(cart=cart).delete()
-        except Cart.DoesNotExist:
-            pass  # Cart already empty or doesn't exist
-
-        # Clear session
-        if 'order_id' in request.session:
-            del request.session['order_id']
-
-        messages.success(request, f'Payment successful! Your order #{order.order_number} has been placed.')
-        return redirect('order_complete', order_number=order.order_number)
-
-    except Order.DoesNotExist:
-        messages.error(request, 'Order not found.')
+    # Verify payment with Flutterwave
+    secret_key = os.getenv('SECRET_KEY')
+    verify_url = f'https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={tx_ref}'
+    headers = {
+        'Authorization': f'Bearer {secret_key}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(verify_url, headers=headers)
+    if response.status_code == 200:
+        result = response.json()
+        status = result.get('status')
+        data = result.get('data', {})
+        payment_status = data.get('status')
+        amount_paid = data.get('amount')
+        payment_id = data.get('id')
+        payment_method = data.get('payment_type', 'card')
+        if status == 'success' and payment_status == 'successful':
+            try:
+                from orders.models import Order, Payment
+                order = Order.objects.get(id=order_id, user=request.user)
+                order.is_ordered = True
+                order.status = 'processing'
+                order.payment_status = 'paid'
+                order.save()
+                Payment.objects.create(
+                    user=request.user,
+                    order=order,
+                    payment_id=payment_id,
+                    payment_method=payment_method,
+                    amount_paid=amount_paid,
+                    status='completed'
+                )
+                # Clear cart
+                try:
+                    from carts.models import Cart, CartItem, cart_id
+                    cart = Cart.objects.get(cart_id=cart_id(request))
+                    CartItem.objects.filter(cart=cart).delete()
+                except Exception:
+                    pass
+                # Clear session
+                for key in ['order_id', 'tx_ref']:
+                    if key in request.session:
+                        del request.session[key]
+                messages.success(request, f'Payment successful! Your order #{order.order_number} has been placed.')
+                return redirect('order_complete', order_number=order.order_number)
+            except Exception as e:
+                messages.error(request, f'Order processing error: {e}')
+                return redirect('store')
+        else:
+            messages.error(request, 'Payment not successful or incomplete.')
+            return redirect('store')
+    else:
+        messages.error(request, 'Could not verify payment with Flutterwave.')
         return redirect('store')
 
 

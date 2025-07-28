@@ -7,4 +7,6 @@ urlpatterns = [
     path('category/<slug:category_slug>/<slug:product_slug>/', views.product_detail, name='product_detail'),
     path('search/', views.search, name='search'),
     path('contact/', views.contact, name='contact'),
+    path('make_payment/', views.make_payment, name='make_payment'),
+    
 ]

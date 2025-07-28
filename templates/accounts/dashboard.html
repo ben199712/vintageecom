@@ -373,7 +373,7 @@
                         <div class="stat-icon">
                             <i class="ti-money"></i>
                         </div>
-                        <div class="stat-number">${{ total_spent|floatformat:2 }}</div>
+                        <div class="stat-number">₦{{ total_spent|floatformat:2 }}</div>
                         <div class="stat-label">Total Spent</div>
                     </div>
                 </div>
@@ -416,7 +416,7 @@
                         </div>
                         <div class="order-detail">
                             <div class="order-detail-label">Total</div>
-                            <div class="order-detail-value">${{ order.order_total|floatformat:2 }}</div>
+                            <div class="order-detail-value">₦{{ order.order_total|floatformat:2 }}</div>
                         </div>
                         <div class="order-detail">
                             <div class="order-detail-label">Payment</div>
@@ -429,7 +429,7 @@
                             {% for item in order.items.all %}
                             <li>
                                 <span>{{ item.product.product_name }}</span>
-                                <span>${{ item.product_price|floatformat:2 }} x {{ item.quantity }}</span>
+                                <span>₦{{ item.product_price|floatformat:2 }} x {{ item.quantity }}</span>
                             </li>
                             {% endfor %}
                         </ul>
@@ -486,7 +486,7 @@
                                         {{ payment.get_payment_method_display }}
                                     </span>
                                 </td>
-                                <td><strong>${{ payment.amount_paid|floatformat:2 }}</strong></td>
+                                <td><strong>₦{{ payment.amount_paid|floatformat:2 }}</strong></td>
                                 <td>
                                     <span class="order-status status-{{ payment.status }}">{{ payment.get_status_display }}</span>
                                 </td>

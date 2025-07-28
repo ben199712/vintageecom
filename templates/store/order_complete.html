@@ -54,7 +54,7 @@
                                     <div class="col-md-6">
                                         <div class="info_item">
                                             <h4>Total Amount</h4>
-                                            <p><strong>${{ order.order_total|floatformat:2 }}</strong></p>
+                                            <p><strong>₦{{ order.order_total|floatformat:2 }}</strong></p>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -92,10 +92,10 @@
                                     <div class="item_info">
                                         <h4>{{ item.product.product_name }}</h4>
                                         <p>Quantity: {{ item.quantity }}</p>
-                                        <p>Price: ${{ item.product_price|floatformat:2 }}</p>
+                                        <p>Price: ₦{{ item.product_price|floatformat:2 }}</p>
                                     </div>
                                     <div class="item_total">
-                                        <strong>${{ item.get_total_price|floatformat:2 }}</strong>
+                                        <strong>₦{{ item.get_total_price|floatformat:2 }}</strong>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -104,15 +104,15 @@
                             <div class="order_summary">
                                 <div class="summary_row">
                                     <span>Subtotal:</span>
-                                    <span>${{ order.order_total|add:order.tax|floatformat:2 }}</span>
+                                    <span>₦{{ order.order_total|add:order.tax|floatformat:2 }}</span>
                                 </div>
                                 <div class="summary_row">
                                     <span>Tax:</span>
-                                    <span>${{ order.tax|floatformat:2 }}</span>
+                                    <span>₦{{ order.tax|floatformat:2 }}</span>
                                 </div>
                                 <div class="summary_row total_row">
                                     <span><strong>Total:</strong></span>
-                                    <span><strong>${{ order.order_total|floatformat:2 }}</strong></span>
+                                    <span><strong>₦{{ order.order_total|floatformat:2 }}</strong></span>
                                 </div>
                             </div>
                         </div>

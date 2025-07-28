@@ -178,7 +178,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <h5>${{ cart_item.product.price }}</h5>
+                                        <h5>₦{{ cart_item.product.price }}</h5>
                                     </td>
                                     <td>
                                         <div class="product_count">
@@ -201,7 +201,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center justify-content-between">
-                                            <h5 class="item-subtotal" data-product-id="{{ cart_item.product.id }}">${{ cart_item.sub_total }}</h5>
+                                            <h5 class="item-subtotal" data-product-id="{{ cart_item.product.id }}">₦{{ cart_item.sub_total }}</h5>
                                             <a href="#" class="remove-item-btn btn btn-sm ajax-remove"
                                                data-product-id="{{ cart_item.product.id }}"
                                                data-product-name="{{ cart_item.product.product_name }}"

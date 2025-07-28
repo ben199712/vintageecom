@@ -41,7 +41,7 @@
                 <div class="row">
                     <div class="col-lg-8">
                         <h3>Billing Details</h3>
-                        <form class="row contact_form" action="{% url 'checkout' %}" method="post" novalidate="novalidate">
+                        <form class="row contact_form" action="{% url 'make_payment' %}" method="post" novalidate="novalidate">
                             {% csrf_token %}
 
                             <div class="col-md-6 form-group">
@@ -120,40 +120,29 @@
                                 {% for cart_item in cart_items %}
                                 <li><a href="#">{{ cart_item.product.product_name }}
                                     <span class="middle">x {{ cart_item.quantity }}</span>
-                                    <span class="last">${{ cart_item.sub_total|floatformat:2 }}</span></a>
+                                    <span class="last">₦{{ cart_item.sub_total|floatformat:2 }}</span></a>
                                 </li>
                                 {% endfor %}
                             </ul>
                             <ul class="list list_2">
-                                <li><a href="#">Subtotal <span>${{ total|floatformat:2 }}</span></a></li>
-                                <li><a href="#">Tax <span>${{ tax|floatformat:2 }}</span></a></li>
-                                <li><a href="#"><strong>Total <span>${{ grand_total|floatformat:2 }}</span></strong></a></li>
+                                <li><a href="#">Subtotal <span>₦{{ total|floatformat:2 }}</span></a></li>
+                                <li><a href="#">Tax <span>₦{{ tax|floatformat:2 }}</span></a></li>
+                                <li><a href="#"><strong>Total <span>₦{{ grand_total|floatformat:2 }}</span></strong></a></li>
                             </ul>
-                            <div class="payment_item">
-                                <div class="radion_btn">
-                                    <input type="radio" id="f-option5" name="selector">
-                                    <label for="f-option5">Check payments</label>
-                                    <div class="check"></div>
-                                </div>
-                                <p>Please send a check to Store Name, Store Street, Store Town, Store State / County,
-                                    Store Postcode.</p>
-                            </div>
                             <div class="payment_item active">
                                 <div class="radion_btn">
-                                    <input type="radio" id="f-option6" name="selector">
-                                    <label for="f-option6">Paypal </label>
-                                    <img src="img/product/card.jpg" alt="">
+                                    <input type="radio" id="f-option5" name="selector" checked>
+                                    <label for="f-option5">Card Payment</label>
                                     <div class="check"></div>
                                 </div>
-                                <p>Pay via PayPal; you can pay with your credit card if you don’t have a PayPal
-                                    account.</p>
+                                <p>Pay with you card and get the fastest and safest payment</p>
                             </div>
                             <div class="creat_account">
                                 <input type="checkbox" id="f-option4" name="selector">
                                 <label for="f-option4">I’ve read and accept the </label>
                                 <a href="#">terms & conditions*</a>
                             </div>
-                            <a class="primary-btn" href="{% url 'payment' %}">Proceed to Paypal</a>
+                            <a class="primary-btn" href="{% url 'make_payment' %}">Proceed to Payment</a>
                         </div>
                     </div>
                 </div>
