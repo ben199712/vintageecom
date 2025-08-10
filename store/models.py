@@ -1,6 +1,8 @@
 from django.db import models
 from category.models import Category
 from django.urls import reverse
+from accounts.models import Account
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
 class Product(models.Model):
@@ -15,6 +17,7 @@ class Product(models.Model):
     created_date    = models.DateTimeField(auto_now_add=True)
     modified_date   = models.DateTimeField(auto_now=True)
     coming_soon     = models.BooleanField(default=False)
+    week_Deals      = models.BooleanField(default=False)
 
     def get_url(self):
         return reverse('product_detail', args=[self.category.slug, self.slug])
@@ -32,3 +35,25 @@ class Contact(models.Model):
 
         def __str__(self):
             return self.name
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating from 1 to 5 stars"
+    )
+    subject = models.CharField(max_length=100, blank=True)
+    review = models.TextField(max_length=500, blank=True)
+    ip = models.CharField(max_length=20, blank=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('product', 'user')  # One review per user per product
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.first_name} - {self.product.product_name} - {self.rating} stars"

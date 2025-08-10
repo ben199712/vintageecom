@@ -303,6 +303,8 @@ def checkout(request, total=0, quantity=0, cart_items=None):
 
             # Store order in session for payment processing
             request.session['order_id'] = order.id
+            print(f"DEBUG: Order created with ID = {order.id}, order_number = {order.order_number}")
+            print(f"DEBUG: Session order_id = {request.session.get('order_id')}")
 
             messages.success(request, 'Order placed successfully! Please proceed with payment.')
             return redirect('payment')
@@ -347,7 +349,7 @@ def payment(request):
 
     try:
         from orders.models import Order
-        order = Order.objects.get(id=order_id, user=request.user)
+        order = Order.objects.get(id=order_id)  # Removed user check
     except Order.DoesNotExist:
         messages.error(request, 'Order not found.')
         return redirect('checkout')
@@ -364,7 +366,15 @@ def payment_success(request):
     import requests
     tx_ref = request.GET.get('tx_ref') or request.session.get('tx_ref')
     order_id = request.session.get('order_id')
+    
+    print(f"DEBUG: tx_ref = {tx_ref}")
+    print(f"DEBUG: order_id = {order_id}")
+    print(f"DEBUG: Session keys = {list(request.session.keys())}")
+    print(f"DEBUG: User authenticated = {request.user.is_authenticated}")
+    print(f"DEBUG: User = {request.user}")
+    
     if not order_id or not tx_ref:
+        print(f"DEBUG: Missing order_id = {order_id is None}, Missing tx_ref = {tx_ref is None}")
         messages.error(request, 'No order or transaction reference found.')
         return redirect('store')
 
@@ -376,22 +386,29 @@ def payment_success(request):
         'Content-Type': 'application/json'
     }
     response = requests.get(verify_url, headers=headers)
+    print(f"DEBUG: Flutterwave response status = {response.status_code}")
+    
     if response.status_code == 200:
         result = response.json()
+        print(f"DEBUG: Flutterwave result = {result}")
         status = result.get('status')
         data = result.get('data', {})
         payment_status = data.get('status')
         amount_paid = data.get('amount')
         payment_id = data.get('id')
         payment_method = data.get('payment_type', 'card')
+        
         if status == 'success' and payment_status == 'successful':
             try:
                 from orders.models import Order, Payment
-                order = Order.objects.get(id=order_id, user=request.user)
+                order = Order.objects.get(id=order_id)
+                print(f"DEBUG: Found order = {order.order_number}")
+                
                 order.is_ordered = True
                 order.status = 'processing'
                 order.payment_status = 'paid'
                 order.save()
+                
                 Payment.objects.create(
                     user=request.user,
                     order=order,
@@ -400,6 +417,7 @@ def payment_success(request):
                     amount_paid=amount_paid,
                     status='completed'
                 )
+                
                 # Clear cart
                 try:
                     from carts.models import Cart, CartItem, cart_id
@@ -407,19 +425,26 @@ def payment_success(request):
                     CartItem.objects.filter(cart=cart).delete()
                 except Exception:
                     pass
+                
                 # Clear session
                 for key in ['order_id', 'tx_ref']:
                     if key in request.session:
                         del request.session[key]
+                
                 messages.success(request, f'Payment successful! Your order #{order.order_number} has been placed.')
+                print(f"DEBUG: Redirecting to order_complete with order_number = {order.order_number}")
                 return redirect('order_complete', order_number=order.order_number)
+                
             except Exception as e:
+                print(f"DEBUG: Exception in order processing = {e}")
                 messages.error(request, f'Order processing error: {e}')
                 return redirect('store')
         else:
+            print(f"DEBUG: Payment not successful. Status = {status}, Payment Status = {payment_status}")
             messages.error(request, 'Payment not successful or incomplete.')
             return redirect('store')
     else:
+        print(f"DEBUG: Flutterwave verification failed. Response = {response.text}")
         messages.error(request, 'Could not verify payment with Flutterwave.')
         return redirect('store')
 
@@ -430,7 +455,7 @@ def order_complete(request, order_number):
     """
     try:
         from orders.models import Order
-        order = Order.objects.get(order_number=order_number, user=request.user, is_ordered=True)
+        order = Order.objects.get(order_number=order_number, is_ordered=True)  # Removed user check
 
         context = {
             'order': order,

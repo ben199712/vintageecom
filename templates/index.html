@@ -308,8 +308,8 @@
 							<img class="img-fluid" src="{% static "img/product/e-p1.png" %}" alt="">
 							<div class="product-details">
 								<div class="price">
-									<h6>$150.00</h6>
-									<h6 class="l-through">$210.00</h6>
+									<h6>₦150.00</h6>
+									<h6 class="l-through">₦210.00</h6>
 								</div>
 								<h4>addidas New Hammer sole
 									for Sports person</h4>
@@ -324,8 +324,8 @@
 							<img class="img-fluid" src="{% static "img/product/e-p1.png" %}" alt="">
 							<div class="product-details">
 								<div class="price">
-									<h6>$150.00</h6>
-									<h6 class="l-through">$210.00</h6>
+									<h6>₦150.00</h6>
+									<h6 class="l-through">₦210.00</h6>
 								</div>
 								<h4>addidas New Hammer sole
 									for Sports person</h4>
@@ -379,116 +379,36 @@
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-lg-9">
+				<div class="col">
 					<div class="row">
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static 'img/r1.jpg' %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
+						{% if deals_week_products %}
+						{% for product in deals_week_products %}
+						<div class="col-lg-3 col-md-6">
+							<div class="single-product">
+								<img class="img-fluid" src="{{ product.images.url }}" alt="{{ product.product_name }}">
+								<div class="product-details">
+									<h6>{{ product.product_name }}</h6>
 									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
+										<h6>₦{{ product.price }}</h6>
+									</div>
+									<div class="prd-bottom">
+
+										<a href="{% url 'add_cart' product.id %}" class="social-info">
+											<span class="ti-bag"></span>
+											<p class="hover-text">add to bag</p>
+										</a>
+										<a href="{{product.get_url}}" class="social-info">
+											<span class="lnr lnr-move"></span>
+											<p class="hover-text">view more</p>
+										</a>
 									</div>
 								</div>
 							</div>
 						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r2.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r3.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r5.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r6.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6 mb-20">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r7.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static "img/r9.jpg" %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static 'img/r10.jpg' %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="col-lg-4 col-md-4 col-sm-6">
-							<div class="single-related-product d-flex">
-								<a href="#"><img src="{% static 'img/r11.jpg' %}" alt=""></a>
-								<div class="desc">
-									<a href="#" class="title">Black lace Heels</a>
-									<div class="price">
-										<h6>$189.00</h6>
-										<h6 class="l-through">$210.00</h6>
-									</div>
-								</div>
-							</div>
-						</div>
+						{% endfor %}
+						{% else %}
+							<h1 class="">No products available.</h1>
+						{% endif %}
 					</div>
 				</div>
 				<div class="col-lg-3">
